@@ -2,13 +2,13 @@ const http = require('http');
 const assert = require('assert');
 const { requestHandler } = require('../index');
 
-// Test the health endpoint
-function testHealthEndpoint() {
+// Test the logs endpoint using the actual request handler
+function testLogsEndpoint() {
   return new Promise((resolve, reject) => {
     const options = {
       hostname: 'localhost',
-      port: 3001,
-      path: '/health',
+      port: 3002,
+      path: '/logs',
       method: 'GET'
     };
 
@@ -21,16 +21,16 @@ function testHealthEndpoint() {
 
       res.on('end', () => {
         try {
-          assert.strictEqual(res.statusCode, 200, 'Health endpoint should return 200');
+          assert.strictEqual(res.statusCode, 200, 'Logs endpoint should return 200');
           assert.strictEqual(res.headers['content-type'], 'application/json', 'Content-Type should be application/json');
 
           const response = JSON.parse(data);
           assert.strictEqual(typeof response, 'object', 'Response should be an object');
-          assert.strictEqual(response.status, 'ok', 'Response should have status "ok"');
-          assert.strictEqual(typeof response.uptime, 'number', 'Response should have numeric uptime');
-          assert(response.uptime >= 0, 'Uptime should be non-negative');
+          assert(Array.isArray(response.logs), 'Response should have logs array');
+          assert.strictEqual(response.logs.length, 0, 'Logs array should be empty');
+          assert.strictEqual(response.count, 0, 'Count should be 0');
 
-          console.log('✓ Health endpoint test passed');
+          console.log('✓ Logs endpoint test passed');
           resolve();
         } catch (error) {
           reject(error);
@@ -47,10 +47,10 @@ function testHealthEndpoint() {
 const server = http.createServer(requestHandler);
 
 async function runTests() {
-  server.listen(3001, async () => {
-    console.log('Test server running on port 3001 (using actual handler)');
+  server.listen(3002, async () => {
+    console.log('Test server running on port 3002 (using actual handler)');
     try {
-      await testHealthEndpoint();
+      await testLogsEndpoint();
       console.log('All tests passed!');
       process.exit(0);
     } catch (error) {
